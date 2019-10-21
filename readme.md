@@ -4,7 +4,7 @@ Forked from [google/flatbuffers]
 Use "--force-defaults" option to emit default values into final bytes.
 Table Start function will add all default values into builder.
 
-### Support Languages
+### Supported Languages
 - Java/C#
 - Golang
 
@@ -31,12 +31,14 @@ func PacketStart(builder *flatbuffers.Builder) {
 ```
 
 Packet.cs
-```net
+```csharp
+...
 public static void StartPacket(FlatBufferBuilder builder) {
 	builder.StartTable(1);
 	builder.AddUshort(0, 1234, 0);
   }
+...
 ```
-
+will be generated.
 
 [google/flatbuffers]: https://github.com/google/flatbuffers
