@@ -1479,9 +1479,26 @@ class GeneralGenerator : public BaseGenerator {
       // Unlike the Create function, these always work.
       code += "  public static void " + FunctionStart('S') + "tart";
       code += struct_def.name;
-      code += "(FlatBufferBuilder builder) { builder.";
+      code += "(FlatBufferBuilder builder) {\n\tbuilder.";
       code += FunctionStart('S') + "tartTable(";
-      code += NumToString(struct_def.fields.vec.size()) + "); }\n";
+      code += NumToString(struct_def.fields.vec.size()) + ");\n";
+      if (parser_.opts.force_defaults) {
+        for (auto it = struct_def.fields.vec.begin();
+           it != struct_def.fields.vec.end(); ++it) {
+          auto &field = **it;
+          if (field.value.constant == "0") continue;
+
+          code += "\tbuilder." + FunctionStart('A') + "dd";
+          code += GenMethod(field.value.type) + "(";
+          code += NumToString(it - struct_def.fields.vec.begin()) + ", ";
+          if (field.value.type.base_type == BASE_TYPE_BOOL) {
+            code += field.value.constant+", false";
+          } else {
+            code += field.value.constant+", 0);\n";
+          }
+        }
+      }
+      code += "  }\n";
       for (auto it = struct_def.fields.vec.begin();
            it != struct_def.fields.vec.end(); ++it) {
         auto &field = **it;

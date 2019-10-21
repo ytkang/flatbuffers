@@ -543,9 +543,46 @@ class GoGenerator : public BaseGenerator {
     code += "(builder *flatbuffers.Builder) {\n";
     code += "\tbuilder.StartObject(";
     code += NumToString(struct_def.fields.vec.size());
-    code += ")\n}\n";
+    code += ")\n";
+
+    if (parser_.opts.force_defaults) {
+      for (auto it = struct_def.fields.vec.begin();
+           it != struct_def.fields.vec.end(); ++it) {
+        auto &field = **it;
+        if (field.value.constant == "0") continue;
+
+        auto offset = it - struct_def.fields.vec.begin();
+        AddDefaultValueOfTable(struct_def, field, offset, code_ptr);
+        if (field.value.type.base_type == BASE_TYPE_VECTOR) {
+          AddDefaultVectorValueOfTable(struct_def, field, code_ptr);
+        }
+      }
+    }
+
+    code += "}\n";
   }
 
+  void AddDefaultValueOfTable(const StructDef &struct_def, const FieldDef &field,
+                         const size_t offset, std::string *code_ptr) {
+    std::string &code = *code_ptr;
+    code += "\tbuilder.Prepend";
+    code += GenMethod(field) + "Slot(";
+    code += NumToString(offset);
+    code += ", " + GenConstant(field) + ", 0";
+    code += ")\n";
+  }
+
+  void AddDefaultVectorValueOfTable(const StructDef &struct_def,
+                          const FieldDef &field, std::string *code_ptr) {
+    std::string &code = *code_ptr;
+    code += "\tbuilder.StartVector(";
+    auto vector_type = field.value.type.VectorType();
+    auto alignment = InlineAlignment(vector_type);
+    auto elem_size = InlineSize(vector_type);
+    code += NumToString(elem_size);
+    code += ", numElems, " + NumToString(alignment);
+    code += ")\n";
+  }
   // Set the value of a table's field.
   void BuildFieldOfTable(const StructDef &struct_def, const FieldDef &field,
                          const size_t offset, std::string *code_ptr) {
